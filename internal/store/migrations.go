@@ -31,4 +31,16 @@ CREATE TABLE IF NOT EXISTS apply_logs (
   confirmation_source TEXT NOT NULL,
   FOREIGN KEY(packet_id) REFERENCES packets(id)
 );
+
+CREATE TABLE IF NOT EXISTS message_drafts (
+  id TEXT PRIMARY KEY,
+  created_at TEXT NOT NULL,
+  recipient TEXT NOT NULL,
+  body TEXT NOT NULL,
+  status TEXT NOT NULL,
+  source_note TEXT NOT NULL,
+  sent_at TEXT NOT NULL,
+  send_mode TEXT NOT NULL,
+  confirm_text TEXT NOT NULL
+);
 `

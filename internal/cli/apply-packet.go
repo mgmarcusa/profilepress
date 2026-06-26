@@ -10,8 +10,8 @@ import (
 )
 
 func newApplyPacketCmd() *cobra.Command {
-	var dbPath, packetID, privacyRaw, confirmSensitive, confirmApply string
-	var override, dryRun, simulateLive bool
+	var dbPath, packetID, privacyRaw, confirmSensitive, confirmApply, confirmNotify string
+	var override, dryRun, simulateLive, notifyNetwork bool
 	cmd := &cobra.Command{
 		Use:     "apply-packet",
 		Short:   "Apply an approved packet only after privacy preflight, sensitive-change confirmation, and final user approval.",
@@ -42,6 +42,14 @@ func newApplyPacketCmd() *cobra.Command {
 			if !dryRun && confirmApply != "APPLY" {
 				return errors.New("non-dry-run apply requires --confirm-apply APPLY")
 			}
+			notifyStatus := "network-notify-disabled-default"
+			if notifyNetwork {
+				notifyStatus = "network-notify-requested"
+				if confirmNotify != "NOTIFY-NETWORK" {
+					return errors.New("--notify-network requires --confirm-notify NOTIFY-NETWORK")
+				}
+				notifyStatus = "network-notify-confirmed"
+			}
 			adapter := linkedin.ApplyAdapter(linkedin.NotImplementedAdapter{})
 			if dryRun || simulateLive {
 				adapter = linkedin.DryRunAdapter{}
@@ -59,7 +67,7 @@ func newApplyPacketCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return printJSON(map[string]any{"apply_log_id": log.ID, "packet_id": p.ID, "result": result, "privacy_status": privacyStatus, "sensitive_status": sensitiveStatus})
+			return printJSON(map[string]any{"apply_log_id": log.ID, "packet_id": p.ID, "result": result, "privacy_status": privacyStatus, "sensitive_status": sensitiveStatus, "notify_network": notifyNetwork, "notify_status": notifyStatus})
 		},
 	}
 	cmd.Flags().StringVar(&dbPath, "db", "", "database path")
@@ -70,5 +78,7 @@ func newApplyPacketCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&simulateLive, "simulate-live", false, "test-only live adapter")
 	cmd.Flags().StringVar(&confirmSensitive, "confirm-sensitive", "", "must equal APPLY-SENSITIVE for sensitive changes")
 	cmd.Flags().StringVar(&confirmApply, "confirm-apply", "", "must equal APPLY for non-dry-run apply")
+	cmd.Flags().BoolVar(&notifyNetwork, "notify-network", false, "explicitly allow LinkedIn to notify the user's network if the browser exposes that option; default is false")
+	cmd.Flags().StringVar(&confirmNotify, "confirm-notify", "", "must equal NOTIFY-NETWORK when --notify-network is set")
 	return cmd
 }

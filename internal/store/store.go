@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
 
+	"profilepress-pp-cli/internal/message"
 	"profilepress-pp-cli/internal/packet"
 	"profilepress-pp-cli/internal/profile"
 )
@@ -139,4 +140,80 @@ func (s *Store) AddApplyLog(log packet.ApplyLog) (packet.ApplyLog, error) {
 	}
 	_, err := s.db.Exec(`INSERT INTO apply_logs(id, packet_id, created_at, privacy_status, sensitive_status, result, dry_run, confirmation_source) VALUES(?,?,?,?,?,?,?,?)`, log.ID, log.PacketID, log.CreatedAt.Format(time.RFC3339), log.PrivacyStatus, log.SensitiveStatus, log.Result, dry, log.ConfirmationSource)
 	return log, err
+}
+
+func (s *Store) CreateMessageDraft(d message.Draft) (message.Draft, error) {
+	if d.ID == "" {
+		d.ID = NewID("msg")
+	}
+	if d.CreatedAt.IsZero() {
+		d.CreatedAt = time.Now().UTC()
+	}
+	if d.Status == "" {
+		d.Status = "draft"
+	}
+	_, err := s.db.Exec(`INSERT INTO message_drafts(id, created_at, recipient, body, status, source_note, sent_at, send_mode, confirm_text) VALUES(?,?,?,?,?,?,?,?,?)`, d.ID, d.CreatedAt.Format(time.RFC3339), d.To, d.Body, d.Status, d.SourceNote, timeString(d.SentAt), d.SendMode, d.ConfirmText)
+	return d, err
+}
+
+func (s *Store) GetMessageDraft(id string) (message.Draft, error) {
+	var d message.Draft
+	var created, sent string
+	err := s.db.QueryRow(`SELECT id, created_at, recipient, body, status, source_note, sent_at, send_mode, confirm_text FROM message_drafts WHERE id=?`, id).Scan(&d.ID, &created, &d.To, &d.Body, &d.Status, &d.SourceNote, &sent, &d.SendMode, &d.ConfirmText)
+	if err != nil {
+		return d, err
+	}
+	d.CreatedAt, _ = time.Parse(time.RFC3339, created)
+	if sent != "" {
+		d.SentAt, _ = time.Parse(time.RFC3339, sent)
+	}
+	return d, nil
+}
+
+func (s *Store) LatestMessageDraft() (message.Draft, error) {
+	var id string
+	if err := s.db.QueryRow(`SELECT id FROM message_drafts ORDER BY created_at DESC LIMIT 1`).Scan(&id); err != nil {
+		return message.Draft{}, err
+	}
+	return s.GetMessageDraft(id)
+}
+
+func (s *Store) ListMessageDrafts(limit int) ([]message.Draft, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	rows, err := s.db.Query(`SELECT id FROM message_drafts ORDER BY created_at DESC LIMIT ?`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var drafts []message.Draft
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		d, err := s.GetMessageDraft(id)
+		if err != nil {
+			return nil, err
+		}
+		drafts = append(drafts, d)
+	}
+	return drafts, rows.Err()
+}
+
+func (s *Store) MarkMessageSent(id, mode, confirm string) (message.Draft, error) {
+	now := time.Now().UTC()
+	_, err := s.db.Exec(`UPDATE message_drafts SET status=?, sent_at=?, send_mode=?, confirm_text=? WHERE id=?`, "sent", now.Format(time.RFC3339), mode, confirm, id)
+	if err != nil {
+		return message.Draft{}, err
+	}
+	return s.GetMessageDraft(id)
+}
+
+func timeString(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.UTC().Format(time.RFC3339)
 }

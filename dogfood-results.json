@@ -40,15 +40,15 @@
     "detail": "sync Upsert calls not found; search methods not found; 0 domain tables found"
   },
   "example_check": {
-    "tested": 8,
-    "with_examples": 8,
-    "valid_examples": 8,
-    "detail": "8/8 commands have examples"
+    "tested": 10,
+    "with_examples": 10,
+    "valid_examples": 10,
+    "detail": "10/10 commands have examples"
   },
   "wiring_check": {
     "command_tree": {
-      "defined": 11,
-      "registered": 11
+      "defined": 15,
+      "registered": 15
     },
     "config_consistency": {
       "consistent": true
@@ -77,10 +77,10 @@
     "skipped": true
   },
   "source_client_check": {
-    "checked": 6
+    "checked": 7
   },
   "print_json_filtered_check": {
-    "checked": 12
+    "checked": 13
   },
   "test_presence": {
     "checked": 3,
@@ -90,7 +90,7 @@
     ]
   },
   "naming_check": {
-    "checked": 12
+    "checked": 13
   },
   "sync_param_drop_check": {
     "checked": 0,

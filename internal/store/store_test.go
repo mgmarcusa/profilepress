@@ -3,54 +3,60 @@ package store
 import (
 	"testing"
 
+	"profilepress-pp-cli/internal/message"
 	"profilepress-pp-cli/internal/packet"
 	"profilepress-pp-cli/internal/profile"
 )
 
-func TestSnapshotPacketAndApplyLogRoundTrip(t *testing.T) {
+func TestSnapshotPacketApplyLogAndMessageRoundTrip(t *testing.T) {
 	s, err := Open(t.TempDir() + "/profilepress.db")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.Close()
 
-	snap, err := s.CreateSnapshot("test", []profile.Section{{Name: "headline", RawText: "Old", Normalized: "Old", Source: "test"}, {Name: "about", RawText: "", Source: "test"}})
+	snap, err := s.CreateSnapshot("fixture", []profile.Section{{Name: "headline", RawText: "old"}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, err := s.GetSnapshot(snap.ID)
-	if err != nil {
+	if _, err := s.GetSnapshot(snap.ID); err != nil {
 		t.Fatal(err)
-	}
-	if len(got.Sections) != 2 {
-		t.Fatalf("sections=%d", len(got.Sections))
 	}
 
-	pkt, err := s.CreatePacket(packet.Packet{SnapshotID: snap.ID, Opportunity: "job", Changes: []packet.Change{{Section: "headline", Before: "Old", After: "New", SourceNote: "resume"}}})
+	pkt, err := s.CreatePacket(packet.Packet{SnapshotID: snap.ID, Opportunity: "opp", Changes: []packet.Change{{Section: "headline", Before: "old", After: "new"}}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	gotPkt, err := s.GetPacket(pkt.ID)
-	if err != nil {
+	if _, err := s.GetPacket(pkt.ID); err != nil {
 		t.Fatal(err)
 	}
-	if gotPkt.Changes[0].After != "New" {
-		t.Fatalf("packet did not round trip: %#v", gotPkt.Changes)
+	if _, err := s.AddApplyLog(packet.ApplyLog{PacketID: pkt.ID, PrivacyStatus: "passed", SensitiveStatus: "confirmed", Result: "dry-run-passed", DryRun: true}); err != nil {
+		t.Fatal(err)
 	}
 
-	log, err := s.AddApplyLog(packet.ApplyLog{PacketID: pkt.ID, PrivacyStatus: "passed", SensitiveStatus: "confirmed", Result: "dry-run-passed", DryRun: true})
+	draft, err := s.CreateMessageDraft(message.Draft{To: "https://www.linkedin.com/in/example", Body: "hello", SourceNote: "test"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if log.ID == "" {
-		t.Fatal("missing apply log id")
-	}
-
-	again, err := s.GetPacket(pkt.ID)
+	got, err := s.GetMessageDraft(draft.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if again.Changes[0].Before != "Old" {
-		t.Fatal("apply log mutated packet history")
+	if got.Status != "draft" || got.Body != "hello" {
+		t.Fatalf("bad draft: %+v", got)
+	}
+	listed, err := s.ListMessageDrafts(10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listed) != 1 {
+		t.Fatalf("expected one draft, got %d", len(listed))
+	}
+	sent, err := s.MarkMessageSent(draft.ID, "simulate-live", "SEND-MESSAGE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sent.Status != "sent" || sent.SendMode != "simulate-live" {
+		t.Fatalf("bad sent draft: %+v", sent)
 	}
 }

@@ -75,7 +75,49 @@ func TestPrintedCLIWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out, "dry-run-passed") {
+	if !strings.Contains(out, "dry-run-passed") || !strings.Contains(out, "network-notify-disabled-default") {
 		t.Fatalf("bad apply: %s", out)
+	}
+}
+
+func TestMessagesDraftSendRequiresExplicitConfirmation(t *testing.T) {
+	dir := t.TempDir()
+	db := filepath.Join(dir, "pp.db")
+	body := filepath.Join(dir, "body.txt")
+	if err := os.WriteFile(body, []byte("Great to reconnect."), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	out, err := captureRun(t, "messages", "draft", "--db", db, "--to", "https://www.linkedin.com/in/example", "--body-file", body, "--source-note", "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var draft map[string]any
+	if err := json.Unmarshal([]byte(out), &draft); err != nil {
+		t.Fatal(err)
+	}
+	if draft["status"] != "draft" {
+		t.Fatalf("bad draft: %s", out)
+	}
+
+	_, err = captureRun(t, "messages", "send", "--db", db, "--draft", draft["draft_id"].(string))
+	if err == nil {
+		t.Fatal("send without confirmation should fail")
+	}
+
+	out, err = captureRun(t, "messages", "send", "--db", db, "--draft", draft["draft_id"].(string), "--dry-run")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "dry-run-passed") {
+		t.Fatalf("bad dry-run send: %s", out)
+	}
+
+	out, err = captureRun(t, "messages", "send", "--db", db, "--draft", draft["draft_id"].(string), "--confirm-send", "SEND-MESSAGE", "--simulate-live")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "sent") || !strings.Contains(out, "simulate-live") {
+		t.Fatalf("bad send: %s", out)
 	}
 }

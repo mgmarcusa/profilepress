@@ -27,6 +27,7 @@ func Execute() error {
 	rootCmd.AddCommand(newApplyPacketCmd())
 	rootCmd.AddCommand(newAuthCmd())
 	rootCmd.AddCommand(newPacketCmd())
+	rootCmd.AddCommand(newMessagesCmd())
 	rootCmd.AddCommand(newDoctorCmd())
 	rootCmd.AddCommand(newVersionCliCmd())
 	return rootCmd.Execute()
