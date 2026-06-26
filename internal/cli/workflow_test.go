@@ -78,6 +78,14 @@ func TestPrintedCLIWorkflow(t *testing.T) {
 	if !strings.Contains(out, "dry-run-passed") || !strings.Contains(out, "network-notify-disabled-default") {
 		t.Fatalf("bad apply: %s", out)
 	}
+
+	out, err = captureRun(t, "apply-packet", "--db", db, "--packet", pkt["packet_id"].(string), "--privacy-status", "disabled", "--simulate-live", "--confirm-sensitive", "APPLY-SENSITIVE", "--confirm-apply", "APPLY")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "simulated-apply-passed") || strings.Contains(out, `"result": "applied"`) {
+		t.Fatalf("simulate-live apply should not look real: %s", out)
+	}
 }
 
 func TestMessagesDraftSendRequiresExplicitConfirmation(t *testing.T) {
