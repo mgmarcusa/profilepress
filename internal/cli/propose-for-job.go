@@ -15,8 +15,9 @@ func newProposeForJobCmd() *cobra.Command {
 	var strict bool
 	var changes []string
 	cmd := &cobra.Command{
-		Use:   "propose-for-job",
-		Short: "Create an opportunity-specific change packet from a snapshot, job brief, and proposed section edits.",
+		Use:     "propose-for-job",
+		Short:   "Create an opportunity-specific change packet from a snapshot, job brief, and proposed section edits.",
+		Example: "profilepress propose-for-job --snapshot snap_123 --job-file job.txt --change 'headline=AI Evaluation Lead' --source-note resume",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if snapshotID == "" {
 				return errors.New("--snapshot is required")

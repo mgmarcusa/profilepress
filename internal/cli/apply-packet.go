@@ -13,8 +13,9 @@ func newApplyPacketCmd() *cobra.Command {
 	var dbPath, packetID, privacyRaw, confirmSensitive, confirmApply string
 	var override, dryRun, simulateLive bool
 	cmd := &cobra.Command{
-		Use:   "apply-packet",
-		Short: "Apply an approved packet only after privacy preflight, sensitive-change confirmation, and final user approval.",
+		Use:     "apply-packet",
+		Short:   "Apply an approved packet only after privacy preflight, sensitive-change confirmation, and final user approval.",
+		Example: "profilepress apply-packet --packet pkt_123 --privacy-status disabled --dry-run --confirm-sensitive APPLY-SENSITIVE",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			db, err := openStore(dbPath)
 			if err != nil {

@@ -9,8 +9,9 @@ import (
 func newDiffCmd() *cobra.Command {
 	var dbPath, packetID string
 	cmd := &cobra.Command{
-		Use:   "diff",
-		Short: "Show a human-readable before/after diff for a change packet.",
+		Use:     "diff",
+		Short:   "Show a human-readable before/after diff for a change packet.",
+		Example: "profilepress diff --packet pkt_123",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			db, err := openStore(dbPath)
 			if err != nil {

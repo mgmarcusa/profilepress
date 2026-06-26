@@ -5,8 +5,9 @@ import "github.com/spf13/cobra"
 func newPacketexportCmd() *cobra.Command {
 	var dbPath, packetID string
 	cmd := &cobra.Command{
-		Use:   "export",
-		Short: "Export current profile, target opportunity, proposed changes, risk notes, and status for CEE review.",
+		Use:     "export",
+		Short:   "Export current profile, target opportunity, proposed changes, risk notes, and status for CEE review.",
+		Example: "profilepress packet export --packet pkt_123",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			db, err := openStore(dbPath)
 			if err != nil {

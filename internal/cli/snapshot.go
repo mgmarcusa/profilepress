@@ -10,8 +10,9 @@ import (
 func newSnapshotCmd() *cobra.Command {
 	var dbPath, fixture string
 	cmd := &cobra.Command{
-		Use:   "snapshot",
-		Short: "Capture current profile sections into the local mirror from a fixture or user-controlled browser session.",
+		Use:     "snapshot",
+		Short:   "Capture current profile sections into the local mirror from a fixture or user-controlled browser session.",
+		Example: "profilepress snapshot --fixture profile.json",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if fixture == "" {
 				return errors.New("snapshot requires --fixture until browser CDP capture is configured")

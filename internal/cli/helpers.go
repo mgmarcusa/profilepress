@@ -14,11 +14,3 @@ func printJSON(v any) error {
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
 }
-
-func writeFile(path string, b []byte) error {
-	if path == "" {
-		_, err := os.Stdout.Write(b)
-		return err
-	}
-	return os.WriteFile(path, b, 0o644)
-}
